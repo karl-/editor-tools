@@ -1,0 +1,9 @@
+{
+	"name": "com.unity.karl.debug",
+	"displayName":"Karl's Debug Stuff",
+	"version": "0.1.0-preview",
+	"unity": "2018.1",
+	"description": "",
+	"dependencies": {
+	}
+}

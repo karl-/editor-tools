@@ -1,0 +1,9 @@
+{
+    "name": "Unity.Karl.Editor",
+    "references": [
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": []
+}
