@@ -1,13 +1,48 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Text;
 using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 using System.Linq;
 
-class CsSolutionSettings : ScriptableSingleton<CsSolutionSettings>
+class CsSolutionSettings
 {
+	const string k_SettingsPath = "ProjectSettings/CSharpSolutionSettings.json";
+	static CsSolutionSettings s_Instance;
 	public string[] additionalProjects = new string[0];
+	public string[] additionalProjectGUID = new string[0];
+
+	public static CsSolutionSettings instance
+	{
+		get
+		{
+			if (s_Instance == null)
+			{
+				if (File.Exists(k_SettingsPath))
+				{
+					try
+					{
+						s_Instance = JsonUtility.FromJson<CsSolutionSettings>(File.ReadAllText(k_SettingsPath));
+					}
+					catch(Exception e)
+					{
+						Debug.LogError(e);
+					}
+				}
+
+				if(s_Instance == null)
+					s_Instance = new CsSolutionSettings();
+			}
+
+			return s_Instance;
+		}
+	}
+
+	public static void Save()
+	{
+		File.WriteAllText(k_SettingsPath, JsonUtility.ToJson(instance));
+	}
 }
 
 static class CsSolutionSettingsEditor
@@ -17,10 +52,10 @@ static class CsSolutionSettingsEditor
 	{
 		var settings = CsSolutionSettings.instance;
 
-
 		GUILayout.Label("Additional C# Projects", EditorStyles.boldLabel);
 
 		var prj = settings.additionalProjects;
+		var guid = settings.additionalProjectGUID;
 
 		for (int i = 0, c = prj.Length; i < c; i++)
 		{
@@ -30,9 +65,19 @@ static class CsSolutionSettingsEditor
 				prj[i] = EditorUtility.OpenFilePanelWithFilters("C# Project", "../", new string[] { "Project", "proj" });
 			if (GUILayout.Button("Remove"))
 			{
+				if (guid == null || guid.Length != prj.Length)
+				{
+					guid = new string[prj.Length];
+					for (int n = 0; n < c; n++)
+						guid[n] = Guid.NewGuid().ToString().ToUpper();
+				}
+
 				ArrayUtility.RemoveAt(ref prj, i);
+				ArrayUtility.RemoveAt(ref guid, i);
+
 				settings.additionalProjects = prj;
-				EditorUtility.SetDirty(settings);
+				settings.additionalProjectGUID = guid;
+				CsSolutionSettings.Save();
 				GUIUtility.ExitGUI();
 			}
 
@@ -45,9 +90,18 @@ static class CsSolutionSettingsEditor
 
 			if (!string.IsNullOrEmpty(add))
 			{
+				if (guid == null || guid.Length != prj.Length)
+				{
+					guid = new string[prj.Length];
+					for (int n = 0, c = prj.Length; n < c; n++)
+						guid[n] = Guid.NewGuid().ToString().ToUpper();
+				}
+
 				ArrayUtility.Add(ref prj, add);
+				ArrayUtility.Add(ref guid, Guid.NewGuid().ToString().ToUpper());
 				settings.additionalProjects = prj;
-				EditorUtility.SetDirty(settings);
+				settings.additionalProjectGUID = guid;
+				CsSolutionSettings.Save();
 			}
 		}
 	}
@@ -66,13 +120,15 @@ class CsProjectPostProcessor : AssetPostprocessor
 		var settings = CsSolutionSettings.instance;
 
 		var slnText = File.ReadAllText(sln);
-
 		var addProjects = new Dictionary<string, string>();
 
-		foreach (var prj in settings.additionalProjects)
+		for(int i = 0, c = settings.additionalProjects.Length; i < c; i++)
 		{
+			var prj = settings.additionalProjects[i];
+			var id = settings.additionalProjectGUID[i];
+
 			if (File.Exists(prj) && !slnText.Contains(prj))
-				addProjects.Add(prj, System.Guid.NewGuid().ToString().ToUpper());
+				addProjects.Add(prj, id);
 		}
 
 		if (!addProjects.Any())
