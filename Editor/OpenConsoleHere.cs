@@ -13,7 +13,7 @@ class OpenConsoleHere : Editor
 		System.Diagnostics.Process.Start(CONSOLE_PATH, string.Format("-Dir {0} -run {{Bash::msys2}} -new_console", dir));
 	}
 
-	private static string GetDirectory()
+	static string GetDirectory()
 	{
 		Object o = Selection.activeObject;
 

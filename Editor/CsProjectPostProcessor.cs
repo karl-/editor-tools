@@ -5,6 +5,8 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using UnityEditorInternal;
 
 class CsSolutionSettings
 {
@@ -60,10 +62,17 @@ static class CsSolutionSettingsEditor
 		for (int i = 0, c = prj.Length; i < c; i++)
 		{
 			GUILayout.BeginHorizontal();
-			GUILayout.TextField(prj[i]);
-			if (GUILayout.Button("..."))
-				prj[i] = EditorUtility.OpenFilePanelWithFilters("C# Project", "../", new string[] { "Project", "proj" });
-			if (GUILayout.Button("Remove"))
+			EditorGUI.BeginChangeCheck();
+
+			prj[i] = GUILayout.TextField(prj[i]);
+
+			if (EditorGUI.EndChangeCheck())
+				Save(settings);
+
+			if (GUILayout.Button("...", GUILayout.Width(32)))
+				prj[i] = EditorUtility.OpenFilePanelWithFilters("C# Project", "../", new string[] { "Project", "csproj" });
+
+			if (GUILayout.Button("Remove", GUILayout.ExpandWidth(false)))
 			{
 				if (guid == null || guid.Length != prj.Length)
 				{
@@ -74,11 +83,7 @@ static class CsSolutionSettingsEditor
 
 				ArrayUtility.RemoveAt(ref prj, i);
 				ArrayUtility.RemoveAt(ref guid, i);
-
-				settings.additionalProjects = prj;
-				settings.additionalProjectGUID = guid;
-				CsSolutionSettings.Save();
-				GUIUtility.ExitGUI();
+				Save(settings);
 			}
 
 			GUILayout.EndHorizontal();
@@ -86,24 +91,36 @@ static class CsSolutionSettingsEditor
 
 		if (GUILayout.Button("Add"))
 		{
-			var add = EditorUtility.OpenFilePanelWithFilters("C# Project", "../", new string[] { "Project", "csproj" });
-
-			if (!string.IsNullOrEmpty(add))
-			{
-				if (guid == null || guid.Length != prj.Length)
-				{
-					guid = new string[prj.Length];
-					for (int n = 0, c = prj.Length; n < c; n++)
-						guid[n] = Guid.NewGuid().ToString().ToUpper();
-				}
-
-				ArrayUtility.Add(ref prj, add);
-				ArrayUtility.Add(ref guid, Guid.NewGuid().ToString().ToUpper());
-				settings.additionalProjects = prj;
-				settings.additionalProjectGUID = guid;
-				CsSolutionSettings.Save();
-			}
+			ArrayUtility.Add(ref prj, "");
+			ArrayUtility.Add(ref guid, Guid.NewGuid().ToString().ToUpper());
+			CsSolutionSettings.Save();
 		}
+
+	}
+
+	static void Save(CsSolutionSettings settings)
+	{
+		CsSolutionSettings.Save();
+		GUIUtility.ExitGUI();
+	}
+
+	static void RebuildCsProject()
+	{
+		Type type = typeof(Editor).Assembly.GetType("UnityEditor.VisualStudioIntegration.SolutionSynchronizer");
+		ConstructorInfo ctor = type.GetConstructor(new[] { typeof(string) });
+		object sync = ctor.Invoke(new object[] { Directory.GetParent(Application.dataPath).FullName });
+
+		if (sync == null)
+			return;
+
+		Debug.Log("woot");
+
+/*
+		var scriptEditor = ScriptEditorUtility.GetScriptEditorFromPreferences();
+//		sync.GenerateAndWriteSolutionAndProjects(scriptEditor);
+		AssetPostprocessingInternal.CallOnGeneratedCSProjectFiles();
+*/
+
 	}
 }
 
