@@ -49,12 +49,16 @@ class CsSolutionSettings
 
 static class CsSolutionSettingsEditor
 {
+	static Vector2 s_Scroll;
+
 	[PreferenceItem("C# Solution")]
 	static void CsSolutionSettingsPrefs()
 	{
 		var settings = CsSolutionSettings.instance;
 
 		GUILayout.Label("Additional C# Projects", EditorStyles.boldLabel);
+
+		s_Scroll = EditorGUILayout.BeginScrollView(s_Scroll);
 
 		var prj = settings.additionalProjects;
 		var guid = settings.additionalProjectGUID;
@@ -95,7 +99,10 @@ static class CsSolutionSettingsEditor
 			ArrayUtility.Add(ref guid, Guid.NewGuid().ToString().ToUpper());
 			CsSolutionSettings.Save();
 		}
+		EditorGUILayout.EndScrollView();
 
+		if(GUILayout.Button("Rebuild CS Projects"))
+			RebuildCsProject();
 	}
 
 	static void Save(CsSolutionSettings settings)
@@ -109,24 +116,20 @@ static class CsSolutionSettingsEditor
 		Type type = typeof(Editor).Assembly.GetType("UnityEditor.VisualStudioIntegration.SolutionSynchronizer");
 		ConstructorInfo ctor = type.GetConstructor(new[] { typeof(string) });
 		object sync = ctor.Invoke(new object[] { Directory.GetParent(Application.dataPath).FullName });
-
 		if (sync == null)
 			return;
-
-		Debug.Log("woot");
-
-/*
+		var rewriteSolutionMethod = type.GetMethod("GenerateAndWriteSolutionAndProjects", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+		if (rewriteSolutionMethod == null)
+			return;
 		var scriptEditor = ScriptEditorUtility.GetScriptEditorFromPreferences();
-//		sync.GenerateAndWriteSolutionAndProjects(scriptEditor);
-		AssetPostprocessingInternal.CallOnGeneratedCSProjectFiles();
-*/
-
+		rewriteSolutionMethod.Invoke(sync, new object[] { scriptEditor });
+		CsProjectPostProcessor.OnGeneratedCSProjectFiles();
 	}
 }
 
 class CsProjectPostProcessor : AssetPostprocessor
 {
-	static void OnGeneratedCSProjectFiles()
+	internal static void OnGeneratedCSProjectFiles()
 	{
 		foreach (var sln in Directory.GetFiles(Directory.GetCurrentDirectory(), "*.sln"))
 			AppendProjects(sln);
