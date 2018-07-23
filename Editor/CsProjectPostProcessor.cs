@@ -87,6 +87,8 @@ static class CsSolutionSettingsEditor
 
 				ArrayUtility.RemoveAt(ref prj, i);
 				ArrayUtility.RemoveAt(ref guid, i);
+				settings.additionalProjects = prj;
+				settings.additionalProjectGUID = guid;
 				Save(settings);
 			}
 
@@ -97,6 +99,8 @@ static class CsSolutionSettingsEditor
 		{
 			ArrayUtility.Add(ref prj, "");
 			ArrayUtility.Add(ref guid, Guid.NewGuid().ToString().ToUpper());
+			settings.additionalProjects = prj;
+			settings.additionalProjectGUID = guid;
 			CsSolutionSettings.Save();
 		}
 		EditorGUILayout.EndScrollView();
