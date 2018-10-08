@@ -5,74 +5,77 @@ using System;
 using System.Linq;
 using System.Reflection;
 
-class ListAssemblyTypes : EditorWindow
+namespace Unity.Karl.Editor
 {
-	[MenuItem("Window/List Assembly Types")]
-	static void Init()
+	sealed class ListAssemblyTypes : EditorWindow
 	{
-		EditorWindow.GetWindow<ListAssemblyTypes>(true, "Loaded Assemblies", true);
-	}
-
-	Dictionary<int, bool> m_IsExpanded = new Dictionary<int, bool>();
-	Assembly[] m_Assemblies = null;
-	Vector2 m_Scroll = Vector2.zero;
-	string m_Filter = null;
-
-	void OnGUI()
-	{
-		if(m_Assemblies == null)
+		[MenuItem("Window/Plugins/List Assembly Types")]
+		static void Init()
 		{
-			m_Assemblies = AppDomain.CurrentDomain.GetAssemblies();
+			EditorWindow.GetWindow<ListAssemblyTypes>(true, "Loaded Assemblies", true);
 		}
 
-		m_Filter = EditorGUILayout.TextField("Filter", m_Filter);
+		Dictionary<int, bool> m_IsExpanded = new Dictionary<int, bool>();
+		Assembly[] m_Assemblies = null;
+		Vector2 m_Scroll = Vector2.zero;
+		string m_Filter = null;
 
-		m_Scroll = EditorGUILayout.BeginScrollView(m_Scroll);
-
-		foreach (Assembly asm in m_Assemblies)
+		void OnGUI()
 		{
-			if (!string.IsNullOrEmpty(m_Filter) && !AssemblyContainsKeyworld(asm, m_Filter))
-				continue;
-
-			int asmHash = asm.GetHashCode();
-			bool isExpanded = false;
-			if (!m_IsExpanded.TryGetValue(asmHash, out isExpanded))
-				m_IsExpanded.Add(asmHash, isExpanded);
-
-			EditorGUI.BeginChangeCheck();
-
-			isExpanded = EditorGUILayout.Foldout(isExpanded, asm.FullName);
-
-			GUI.skin.label.richText = true;
-
-			if (isExpanded)
+			if (m_Assemblies == null)
 			{
-				foreach(Type t in asm.GetTypes())
+				m_Assemblies = AppDomain.CurrentDomain.GetAssemblies();
+			}
+
+			m_Filter = EditorGUILayout.TextField("Filter", m_Filter);
+
+			m_Scroll = EditorGUILayout.BeginScrollView(m_Scroll);
+
+			foreach (Assembly asm in m_Assemblies)
+			{
+				if (!string.IsNullOrEmpty(m_Filter) && !AssemblyContainsKeyworld(asm, m_Filter))
+					continue;
+
+				int asmHash = asm.GetHashCode();
+				bool isExpanded = false;
+				if (!m_IsExpanded.TryGetValue(asmHash, out isExpanded))
+					m_IsExpanded.Add(asmHash, isExpanded);
+
+				EditorGUI.BeginChangeCheck();
+
+				isExpanded = EditorGUILayout.Foldout(isExpanded, asm.FullName);
+
+				GUI.skin.label.richText = true;
+
+				if (isExpanded)
 				{
-					GUI.color = string.IsNullOrEmpty(m_Filter) || t.FullName.Contains(m_Filter) ? Color.white : Color.gray;
-					GUILayout.Label(string.Format("<color=#808080ff>\u2022</color> {0}", t.ToString()));
+					foreach (Type t in asm.GetTypes())
+					{
+						GUI.color = string.IsNullOrEmpty(m_Filter) || t.FullName.Contains(m_Filter) ? Color.white : Color.gray;
+						GUILayout.Label(string.Format("<color=#808080ff>\u2022</color> {0}", t.ToString()));
+					}
+				}
+
+				GUI.color = Color.white;
+
+				if (EditorGUI.EndChangeCheck())
+				{
+					m_IsExpanded[asmHash] = isExpanded;
 				}
 			}
 
-			GUI.color = Color.white;
-
-			if (EditorGUI.EndChangeCheck())
-			{
-				m_IsExpanded[asmHash] = isExpanded;
-			}
+			EditorGUILayout.EndScrollView();
 		}
 
-		EditorGUILayout.EndScrollView();
-	}
+		bool AssemblyContainsKeyworld(Assembly asm, string word)
+		{
+			if (asm.FullName.Contains(word))
+				return true;
 
-	bool AssemblyContainsKeyworld(Assembly asm, string word)
-	{
-		if (asm.FullName.Contains(word))
-			return true;
+			if (asm.GetTypes().Any(x => x.FullName.Contains(word)))
+				return true;
 
-		if (asm.GetTypes().Any(x => x.FullName.Contains(word)))
-			return true;
-
-		return false;
+			return false;
+		}
 	}
 }

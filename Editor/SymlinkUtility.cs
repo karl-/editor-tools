@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Diagnostics;
 
-namespace Parabox
+namespace Unity.Karl.Editor
 {
 	/**
 	 *	An editor utility for easily creating symlinks in your project.
@@ -27,13 +27,14 @@ namespace Parabox
 		{
 			get
 			{
-				if(s_SymlinkMarkerStyle == null)
+				if (s_SymlinkMarkerStyle == null)
 				{
 					s_SymlinkMarkerStyle = new GUIStyle(EditorStyles.label);
 					s_SymlinkMarkerStyle.normal.textColor = new Color(.2f, .8f, .2f, .8f);
 					s_SymlinkMarkerStyle.fontStyle = FontStyle.Bold;
 					s_SymlinkMarkerStyle.alignment = TextAnchor.MiddleLeft;
 				}
+
 				return s_SymlinkMarkerStyle;
 			}
 		}
@@ -55,17 +56,17 @@ namespace Parabox
 			{
 				string path = AssetDatabase.GUIDToAssetPath(guid);
 
-				if(!string.IsNullOrEmpty(path))
+				if (!string.IsNullOrEmpty(path))
 				{
 					FileAttributes attribs = File.GetAttributes(path);
 
 					r.x += 2;
 
-					if((attribs & k_FolderSymlinkAttributes) == k_FolderSymlinkAttributes )
+					if ((attribs & k_FolderSymlinkAttributes) == k_FolderSymlinkAttributes)
 						GUI.Label(r, "S", symlinkMarkerStyle);
 				}
 			}
-			catch {}
+			catch { }
 		}
 
 		/**
@@ -76,19 +77,19 @@ namespace Parabox
 		{
 			string sourceFolderPath = EditorUtility.OpenFolderPanel("Select Folder Source", "", "");
 
-			if( sourceFolderPath.Contains(Application.dataPath) )
+			if (sourceFolderPath.Contains(Application.dataPath))
 			{
 				UnityEngine.Debug.LogWarning("Cannot create a symlink to folder in your project!");
 				return;
 			}
 
 			// Cancelled dialog
-			if( string.IsNullOrEmpty(sourceFolderPath) )
+			if (string.IsNullOrEmpty(sourceFolderPath))
 				return;
 
 			string sourceFolderName = sourceFolderPath.Split(new char[] { '/', '\\' }).LastOrDefault();
 
-			if( string.IsNullOrEmpty(sourceFolderName) )
+			if (string.IsNullOrEmpty(sourceFolderName))
 			{
 				UnityEngine.Debug.LogWarning("Couldn't deduce the folder name?");
 				return;
@@ -98,28 +99,29 @@ namespace Parabox
 
 			string targetPath = uobject != null ? AssetDatabase.GetAssetPath(uobject) : "";
 
-			if(string.IsNullOrEmpty(targetPath))
+			if (string.IsNullOrEmpty(targetPath))
 				targetPath = "Assets";
 
 			FileAttributes attribs = File.GetAttributes(targetPath);
 
-			if( (attribs & FileAttributes.Directory) != FileAttributes.Directory )
+			if ((attribs & FileAttributes.Directory) != FileAttributes.Directory)
 				targetPath = Path.GetDirectoryName(targetPath);
 
 			targetPath = string.Format("{0}/{1}", targetPath, sourceFolderName);
 
-			if( Directory.Exists(targetPath) )
+			if (Directory.Exists(targetPath))
 			{
 				UnityEngine.Debug.LogWarning(string.Format("A folder already exists at this location, aborting link.\n{0} -> {1}", sourceFolderPath, targetPath));
 				return;
 			}
 
-	#if UNITY_EDITOR_WIN
+#if UNITY_EDITOR_WIN
 			Process cmd = Process.Start("CMD.exe", string.Format("/C mklink /J \"{0}\" \"{1}\"", targetPath, sourceFolderPath));
 			cmd.WaitForExit();
-	#elif UNITY_EDITOR_OSX || UNITY_EDITOR_LINUX
-			// @todo
-	#endif
+#elif UNITY_EDITOR_OSX || UNITY_EDITOR_LINUX
+
+// @todo
+#endif
 
 			// UnityEngine.Debug.Log(string.Format("Created symlink: {0} <=> {1}", targetPath, sourceFolderPath));
 
