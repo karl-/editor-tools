@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using UnityEditorInternal;
 using UnityEngine;
@@ -43,17 +44,31 @@ namespace Unity.Karl.Editor
 		[SerializeField]
 		ProjectAndGuid[] m_AdditionalProjectReferences;
 
+		// Used to remove the module DLLs that are made redundant by including the UnityEngine/UnityEditor projects.
+		// Ex, to filter out modules while leaving two that are still required:
+		// @"(?!UnityEngine\.TestRunner|UnityEngine\.AudioModule)UnityEngine\.?"
 		[SerializeField]
 		string[] m_RemoveReferences;
+
+		[SerializeField]
+		string[] m_AdditionalFiles;
 
 		public IEnumerable<ProjectAndGuid> additionalProjectReferences
 		{
 			get { return new ReadOnlyCollection<ProjectAndGuid>(m_AdditionalProjectReferences); }
+			set { m_AdditionalProjectReferences = value.ToArray(); }
 		}
 
 		public IEnumerable<string> removeReferencePatterns
 		{
 			get { return new ReadOnlyCollection<string>(m_RemoveReferences); }
+			set { m_RemoveReferences = value.ToArray(); }
+		}
+
+		public IEnumerable<string> additionalFiles
+		{
+			get { return new ReadOnlyCollection<string>(m_AdditionalFiles); }
+			set { m_AdditionalFiles = value.ToArray(); }
 		}
 
 		public static CsProjectSettings instance

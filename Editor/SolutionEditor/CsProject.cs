@@ -16,13 +16,6 @@ namespace Unity.Karl.Editor
 			m_Path = path;
 		}
 
-		static readonly HashSet<string> k_HintPathWhitelist = new HashSet<string>()
-		{
-			@"UnityEngine\.UnityTestProtocolModule",
-			@"UnityEngine\.TestRunner",
-			@"UnityEngine\.AudioModule"
-		};
-
 		public void RemoveReferences(IEnumerable<string> patterns)
 		{
 			string csproj = File.ReadAllText(m_Path);
@@ -56,7 +49,39 @@ namespace Unity.Karl.Editor
 			sr.Dispose();
 		}
 
+		public void AddFileReferences(IEnumerable<string> files)
+		{
+			var sb = new StringBuilder();
+
+			sb.AppendLine("  <ItemGroup>");
+
+			foreach (var file in files)
+				sb.AppendLine("<None Include=\" + file + \" />");
+
+			sb.AppendLine("  </ItemGroup>");
+		}
+
 		public void AddProjectReferences(IEnumerable<ProjectAndGuid> projects)
+		{
+			var sb = new StringBuilder();
+
+			sb.AppendLine("  <ItemGroup>");
+
+			foreach(var prj in projects)
+			{
+				sb.AppendLine("    <ProjectReference Include=\"" + prj.path + "\">");
+				sb.AppendLine("      <Project>{" + prj.guid + "}</Project>");
+				sb.AppendLine("      <Name>" + Path.GetFileNameWithoutExtension(prj.path) + "</Name>");
+				sb.AppendLine("    </ProjectReference>");
+
+			}
+
+			sb.AppendLine("  </ItemGroup>");
+
+			AppendItemGroup(sb.ToString());
+		}
+
+		void AppendItemGroup(string itemGroup)
 		{
 			string csproj = File.ReadAllText(m_Path);
 
@@ -69,28 +94,15 @@ namespace Unity.Karl.Editor
 				var trim = line.Trim();
 
 				if (trim.StartsWith("</Project>"))
-				{
-					sb.AppendLine("  <ItemGroup>");
-
-					foreach(var prj in projects)
-					{
-						sb.AppendLine("    <ProjectReference Include=\"" + prj.path + "\">");
-						sb.AppendLine("      <Project>{" + prj.guid + "}</Project>");
-						sb.AppendLine("      <Name>" + Path.GetFileNameWithoutExtension(prj.path) + "</Name>");
-						sb.AppendLine("    </ProjectReference>");
-
-					}
-					sb.AppendLine("  </ItemGroup>");
-				}
+					sb.AppendLine(itemGroup);
 
 				sb.AppendLine(line);
 			}
 
 			File.WriteAllText(m_Path, sb.ToString());
 			sr.Dispose();
-
 		}
-
+		
 		static void ReadToLine(StringReader sr, string match)
 		{
 			while (sr.Peek() > -1)

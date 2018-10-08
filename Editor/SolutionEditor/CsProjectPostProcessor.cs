@@ -29,5 +29,29 @@ namespace Unity.Karl.Editor
 				prj.RemoveReferences(CsProjectSettings.instance.removeReferencePatterns);
 			}
 		}
+
+		static IEnumerable<string> GetFiles(string path)
+		{
+			var all = SearchOption.TopDirectoryOnly;
+
+			if (path.EndsWith("!"))
+			{
+				path = path.Substring(0, path.Length - 1);
+				all = SearchOption.AllDirectories;
+			}
+
+			var directory = "";
+			var sanitized = path.Replace("\\", "/");
+			var separator = sanitized.LastIndexOf("/");
+			var pattern = sanitized;
+
+			if (separator > -1)
+			{
+				directory = sanitized.Substring(0, separator + 1);
+				pattern = sanitized.Substring(separator + 1, (sanitized.Length - separator) - 1);
+			}
+
+			return Directory.GetFiles(directory, pattern, all);
+		}
 	}
 }

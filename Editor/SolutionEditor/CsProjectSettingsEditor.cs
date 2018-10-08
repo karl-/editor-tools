@@ -36,13 +36,19 @@ namespace Unity.Karl.Editor
 		{
 			m_AdditionalProjectReferences = serializedObject.FindProperty("m_AdditionalProjectReferences");
 			m_AdditionalProjectReferencesList = new ReorderableList(serializedObject, m_AdditionalProjectReferences);
-			m_AdditionalProjectReferencesList.drawHeaderCallback += (r) => { OnDrawHeader(r, "Additional Project References"); };
 			m_AdditionalProjectReferencesList.drawElementCallback += DrawAdditionalProjectReferenceItem;
+			m_AdditionalProjectReferencesList.drawHeaderCallback += (r) =>
+			{
+				OnDrawHeader(r, new GUIContent("Additional Project References", "Include references to additional csproj files."));
+			};
+
 
 			m_RemoveReferences = serializedObject.FindProperty("m_RemoveReferences");
 			m_RemoveReferencesList = new ReorderableList(serializedObject, m_RemoveReferences);
-			m_RemoveReferencesList.drawHeaderCallback += (r) => { OnDrawHeader(r, "Include Reference Filter Patterns"); };
 			m_RemoveReferencesList.drawElementCallback += DrawRemoveReferenceItem;
+			m_RemoveReferencesList.drawHeaderCallback += (r) =>
+				{ OnDrawHeader(r, new GUIContent("Include Reference Filter Patterns", "Remove referenced DLLs matching a regular expression.")); };
+
 		}
 
 		public override void OnInspectorGUI()
@@ -53,15 +59,11 @@ namespace Unity.Karl.Editor
 
 			GUILayout.BeginVertical(Styles.listWrapper);
 
-			GUILayout.Label("Additional C# Project References", EditorStyles.boldLabel);
+			GUILayout.Label("General Project Settings", EditorStyles.boldLabel);
 
 			m_AdditionalProjectReferencesList.DoLayoutList();
 
 			GUILayout.Space(4);
-
-			GUILayout.Label("Include Reference Filter Patterns", EditorStyles.boldLabel);
-
-			GUILayout.Label("Exclude references matching a regular expression.");
 
 			m_RemoveReferencesList.DoLayoutList();
 
@@ -70,9 +72,9 @@ namespace Unity.Karl.Editor
 			serializedObject.ApplyModifiedProperties();
 		}
 
-		void OnDrawHeader(Rect rect, string title)
+		void OnDrawHeader(Rect rect, GUIContent content)
 		{
-			GUI.Label(rect, title);
+			GUI.Label(rect, content, EditorStyles.boldLabel);
 		}
 
 		void DrawAdditionalProjectReferenceItem(Rect rect, int index, bool isactive, bool isfocused)
@@ -89,7 +91,7 @@ namespace Unity.Karl.Editor
 			EditorGUI.PropertyField(
 				new Rect(rect.x, rect.y + 2, rect.width, EditorGUIUtility.singleLineHeight),
 				element,
-				new GUIContent("Pattern"));
+				new GUIContent("Pattern", "Exclude references matching a regular expression."));
 		}
 	}
 
