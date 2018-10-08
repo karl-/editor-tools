@@ -7,6 +7,7 @@ using UEditor = UnityEditor.Editor;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using UnityEditorInternal;
 
 namespace Unity.Karl.Editor
@@ -211,6 +212,77 @@ namespace Unity.Karl.Editor
 			File.WriteAllText(sln, sb.ToString());
 		}
 
-		static void ReplaceHintPathWithProject(string proj) { }
+		static readonly HashSet<string> k_HintPathWhitelist = new HashSet<string>()
+		{
+			@"UnityEngine\.UnityTestProtocolModule",
+			@"UnityEngine\.TestRunner",
+			@"UnityEngine\.AudioModule"
+		};
+
+		static void ReplaceHintPathWithProject(string projectPath)
+		{
+			string csproj = File.ReadAllText(projectPath);
+			var references = new HashSet<string>(CsSolutionSettings.instance.additionalProjects.Select(Path.GetFileNameWithoutExtension));
+
+			var sr = new StringReader(csproj);
+			var sb = new StringBuilder();
+
+			while (sr.Peek() > -1)
+			{
+				var line = sr.ReadLine();
+
+				var trim = line.Trim();
+
+				// Remove HintPath references
+				if (trim.StartsWith("<Reference Include=\""))
+				{
+					var name = trim.Replace("<Reference Include=\"", "").Replace("\">", "");
+
+					// If a match is found, advance the reader beyond this reference
+					if (!k_HintPathWhitelist.Any(x => Regex.IsMatch(name, x))
+						&& references.Any(x => Regex.IsMatch(name, x + "\\.?")))
+					{
+						ReadToLine(sr, "</Reference>");
+						continue;
+					}
+				}
+
+				// Add ProjectReference ItemGroup
+				if (trim.StartsWith("</Project>"))
+					AppendProjectReferenceItemGroup(sb,
+						CsSolutionSettings.instance.additionalProjects,
+						CsSolutionSettings.instance.additionalProjectGUID);
+
+				sb.AppendLine(line);
+			}
+
+			File.WriteAllText(projectPath, sb.ToString());
+			sr.Dispose();
+		}
+
+		static void ReadToLine(StringReader sr, string match)
+		{
+			while (sr.Peek() > -1)
+			{
+				var line = sr.ReadLine();
+				var trim = line.Trim();
+				if (trim.StartsWith(match))
+					return;
+			}
+		}
+
+		static void AppendProjectReferenceItemGroup(StringBuilder sb, string[] path, string[] guid)
+		{
+			sb.AppendLine("  <ItemGroup>");
+			for (int i = 0, c = System.Math.Min(path.Length, guid.Length); i < c; i++)
+			{
+				sb.AppendLine("    <ProjectReference Include=\"" + path[i] + "\">");
+				sb.AppendLine("      <Project>{" + guid[i] + "}</Project>");
+				sb.AppendLine("      <Name>" + Path.GetFileNameWithoutExtension(path[i]) + "</Name>");
+				sb.AppendLine("    </ProjectReference>");
+
+			}
+			sb.AppendLine("  </ItemGroup>");
+		}
 	}
 }

@@ -8,7 +8,7 @@ namespace Unity.Karl.Editor
 {
 	sealed class SceneExplorer : EditorWindow
 	{
-		[MenuItem("Window/Scene Explorer")]
+		[MenuItem("Window/Plugins/Scene Explorer")]
 		static void MenuInitSceneExplorer()
 		{
 			GetWindow<SceneExplorer>(true, "Scene Explorer", true).Show();
