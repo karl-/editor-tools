@@ -4,8 +4,10 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UEditor = UnityEditor.Editor;
 
 namespace Unity.Karl.Editor
@@ -42,16 +44,29 @@ namespace Unity.Karl.Editor
 		static CsProjectSettings s_Instance;
 
 		[SerializeField]
-		ProjectAndGuid[] m_AdditionalProjectReferences;
+		ProjectAndGuid[] m_AdditionalProjectReferences = new ProjectAndGuid[]
+		{
+			new ProjectAndGuid() { path = "C:/Users/karlh/unity/unity/Projects/CSharp/UnityEngine.csproj" },
+			new ProjectAndGuid() { path = "C:/Users/karlh/unity/unity/Projects/CSharp/UnityEditor.csproj" }
+		};
+
+		[SerializeField]
+		bool m_AdditionalProjectReferencesOverridesDlls;
+
+		public bool additionalProjectReferencesOverridesDlls
+		{
+			get { return m_AdditionalProjectReferencesOverridesDlls; }
+		}
 
 		// Used to remove the module DLLs that are made redundant by including the UnityEngine/UnityEditor projects.
 		// Ex, to filter out modules while leaving two that are still required:
 		// @"(?!UnityEngine\.TestRunner|UnityEngine\.AudioModule)UnityEngine\.?"
+		[FormerlySerializedAs("m_RemoveReferences")]
 		[SerializeField]
-		string[] m_RemoveReferences;
+		string[] m_ReferenceFilters = new string[] { @"(?!UnityEngine\.TestRunner|UnityEngine\.AudioModule)UnityEngine\.?" };
 
 		[SerializeField]
-		string[] m_AdditionalFiles;
+		string[] m_ProjectFilters;
 
 		public IEnumerable<ProjectAndGuid> additionalProjectReferences
 		{
@@ -59,16 +74,16 @@ namespace Unity.Karl.Editor
 			set { m_AdditionalProjectReferences = value.ToArray(); }
 		}
 
-		public IEnumerable<string> removeReferencePatterns
+		public IEnumerable<string> referenceFilters
 		{
-			get { return new ReadOnlyCollection<string>(m_RemoveReferences); }
-			set { m_RemoveReferences = value.ToArray(); }
+			get { return new ReadOnlyCollection<string>(m_ReferenceFilters); }
+			set { m_ReferenceFilters = value.ToArray(); }
 		}
 
-		public IEnumerable<string> additionalFiles
+		public IEnumerable<string> projectFilters
 		{
-			get { return new ReadOnlyCollection<string>(m_AdditionalFiles); }
-			set { m_AdditionalFiles = value.ToArray(); }
+			get { return new ReadOnlyCollection<string>(m_ProjectFilters); }
+			set { m_ProjectFilters = value.ToArray(); }
 		}
 
 		public static CsProjectSettings instance
@@ -101,6 +116,14 @@ namespace Unity.Karl.Editor
 		public void Save()
 		{
 			File.WriteAllText(k_SettingsPath, JsonUtility.ToJson(this, true));
+		}
+
+		public static string solutionPath
+		{
+			get
+			{
+				return Directory.GetCurrentDirectory() + "/" + Application.productName + ".sln";
+			}
 		}
 
 		public static void RebuildSolution()

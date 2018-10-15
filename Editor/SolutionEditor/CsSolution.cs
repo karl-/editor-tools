@@ -14,6 +14,33 @@ namespace Unity.Karl.Editor
 			m_Path = path;
 		}
 
+		public IEnumerable<ProjectAndGuid> GetProjects()
+		{
+			var projects = new List<ProjectAndGuid>();
+
+			string solutionContents = File.ReadAllText(m_Path);
+
+			using (var sr = new StringReader(solutionContents))
+			{
+				while (sr.Peek() > -1)
+				{
+					var line = sr.ReadLine();
+
+					if (line.StartsWith("Project(\""))
+					{
+						var separator = line.IndexOf("=");
+						var project = line.Substring(separator, line.Length - separator);
+						projects.Add(new ProjectAndGuid()
+						{
+							path = project
+						});
+					}
+				}
+			}
+
+			return projects;
+		}
+
 		public void AddProjectReferences(IEnumerable<ProjectAndGuid> projects)
 		{
 			var slnText = File.ReadAllText(m_Path);

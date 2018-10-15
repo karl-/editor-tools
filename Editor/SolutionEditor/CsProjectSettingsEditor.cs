@@ -1,6 +1,8 @@
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Unity.Karl.Editor
 {
@@ -11,7 +13,10 @@ namespace Unity.Karl.Editor
 		ReorderableList m_RemoveReferencesList;
 
 		SerializedProperty m_AdditionalProjectReferences;
-		SerializedProperty m_RemoveReferences;
+		SerializedProperty m_ReferenceFilters;
+		SerializedProperty m_AdditionalProjectReferencesOverridesDlls;
+
+//		List<ProjectAndGuid> m_Projects = new List<ProjectAndGuid>();
 
 		static class Styles
 		{
@@ -43,31 +48,46 @@ namespace Unity.Karl.Editor
 			};
 
 
-			m_RemoveReferences = serializedObject.FindProperty("m_RemoveReferences");
-			m_RemoveReferencesList = new ReorderableList(serializedObject, m_RemoveReferences);
+			m_ReferenceFilters = serializedObject.FindProperty("m_ProjectFilters");
+			m_RemoveReferencesList = new ReorderableList(serializedObject, m_ReferenceFilters);
 			m_RemoveReferencesList.drawElementCallback += DrawRemoveReferenceItem;
 			m_RemoveReferencesList.drawHeaderCallback += (r) =>
 				{ OnDrawHeader(r, new GUIContent("Include Reference Filter Patterns", "Remove referenced DLLs matching a regular expression.")); };
 
+//			m_Projects = new CsSolution(CsProjectSettings.solutionPath).GetProjects().ToList();
+
+			m_AdditionalProjectReferencesOverridesDlls = serializedObject.FindProperty("m_AdditionalProjectReferencesOverridesDlls");
 		}
 
 		public override void OnInspectorGUI()
 		{
 			Styles.Init();
 
+			var evt = Event.current;
+
+			if (evt.type == EventType.ContextClick)
+				DoContextMenu();
+
 			serializedObject.Update();
 
 			GUILayout.BeginVertical(Styles.listWrapper);
 
-			GUILayout.Label("General Project Settings", EditorStyles.boldLabel);
+			GUILayout.Label("Solution Settings", EditorStyles.boldLabel);
 
 			m_AdditionalProjectReferencesList.DoLayoutList();
 
+			EditorGUILayout.PropertyField(m_AdditionalProjectReferencesOverridesDlls);
+
 			GUILayout.Space(4);
+
+			GUILayout.Label("General Project Settings", EditorStyles.boldLabel);
 
 			m_RemoveReferencesList.DoLayoutList();
 
 			GUILayout.EndVertical();
+
+//			foreach (var prj in m_Projects)
+//				GUILayout.Label(prj.path, EditorStyles.wordWrappedLabel);
 
 			serializedObject.ApplyModifiedProperties();
 		}
@@ -92,6 +112,10 @@ namespace Unity.Karl.Editor
 				new Rect(rect.x, rect.y + 2, rect.width, EditorGUIUtility.singleLineHeight),
 				element,
 				new GUIContent("Pattern", "Exclude references matching a regular expression."));
+		}
+
+		void DoContextMenu()
+		{
 		}
 	}
 

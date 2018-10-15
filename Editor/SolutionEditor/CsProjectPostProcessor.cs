@@ -16,18 +16,25 @@ namespace Unity.Karl.Editor
 	{
 		internal static void OnGeneratedCSProjectFiles()
 		{
+			var instance = CsProjectSettings.instance;
+
 			foreach (var solutionPath in Directory.GetFiles(Directory.GetCurrentDirectory(), "*.sln"))
 			{
 				var solution = new CsSolution(solutionPath);
-				solution.AddProjectReferences(CsProjectSettings.instance.additionalProjectReferences);
+				solution.AddProjectReferences(instance.additionalProjectReferences);
 			}
 
 			foreach (var projectPath in Directory.GetFiles(Directory.GetCurrentDirectory(), "*.csproj"))
 			{
 				var prj = new CsProject(projectPath);
-				prj.AddProjectReferences(CsProjectSettings.instance.additionalProjectReferences);
-				prj.RemoveReferences(CsProjectSettings.instance.removeReferencePatterns);
+
+				prj.AddProjectReferences(instance.additionalProjectReferences);
+
+				if(instance.additionalProjectReferencesOverridesDlls)
+					prj.RemoveReferences(instance.referenceFilters);
 			}
+
+			Debug.Log("PostProcessing!");
 		}
 
 		static IEnumerable<string> GetFiles(string path)
