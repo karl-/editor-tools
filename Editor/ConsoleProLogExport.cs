@@ -173,5 +173,6 @@ namespace Unity.Karl.Editor
 			PluginEntryPoint.CallRider(string.Format("{0}{1}{0} --line {2} {0}{3}{0}", "\"", sln, line, Path.GetFullPath(file)));
 		}
 	}
-#endif
 }
+
+#endif
