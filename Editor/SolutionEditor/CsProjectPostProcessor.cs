@@ -34,8 +34,6 @@ namespace Unity.Karl.Editor
 					prj.RemoveReferences(instance.referenceFilters);
 				}
 			}
-
-			Debug.Log("PostProcessing!");
 		}
 
 		static IEnumerable<string> GetFiles(string path)
