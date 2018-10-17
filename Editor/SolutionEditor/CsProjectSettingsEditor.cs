@@ -9,6 +9,7 @@ namespace Unity.Karl.Editor
 	[CustomEditor(typeof(CsProjectSettings))]
 	sealed class CsProjectSettingsEditor : UnityEditor.Editor
 	{
+	    bool m_PropertiesInitialized;
 		ReorderableList m_AdditionalProjectReferencesList;
 		ReorderableList m_RemoveReferencesList;
 
@@ -37,8 +38,13 @@ namespace Unity.Karl.Editor
 			}
 		}
 
-		void OnEnable()
+		void InitProperties()
 		{
+		    if (m_PropertiesInitialized || serializedObject == null)
+		        return;
+
+		    m_PropertiesInitialized = true;
+
 			m_AdditionalProjectReferences = serializedObject.FindProperty("m_AdditionalProjectReferences");
 			m_AdditionalProjectReferencesList = new ReorderableList(serializedObject, m_AdditionalProjectReferences);
 			m_AdditionalProjectReferencesList.drawElementCallback += DrawAdditionalProjectReferenceItem;
@@ -62,6 +68,7 @@ namespace Unity.Karl.Editor
 		public override void OnInspectorGUI()
 		{
 			Styles.Init();
+		    InitProperties();
 
 			var evt = Event.current;
 
