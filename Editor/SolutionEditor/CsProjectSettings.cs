@@ -128,6 +128,12 @@ namespace Unity.Karl.Editor
 
 		public static void RebuildSolution()
 		{
+			foreach(var file in Directory.GetFiles(Directory.GetCurrentDirectory(), "*.csproj"))
+				File.Delete(file);
+
+			foreach(var file in Directory.GetFiles(Directory.GetCurrentDirectory(), "*.sln"))
+				File.Delete(file);
+
 			Type type = typeof(UEditor).Assembly.GetType("UnityEditor.VisualStudioIntegration.SolutionSynchronizer");
 			ConstructorInfo ctor = type.GetConstructor(new[] { typeof(string) });
 			object sync = ctor.Invoke(new object[] { Directory.GetParent(Application.dataPath).FullName });
@@ -138,6 +144,7 @@ namespace Unity.Karl.Editor
 				return;
 			var scriptEditor = ScriptEditorUtility.GetScriptEditorFromPreferences();
 			rewriteSolutionMethod.Invoke(sync, new object[] { scriptEditor });
+
 			CsProjectPostProcessor.OnGeneratedCSProjectFiles();
 		}
 	}
