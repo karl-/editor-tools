@@ -14,9 +14,9 @@ namespace Unity.Karl.Editor
 			m_Path = path;
 		}
 
-		public IEnumerable<ProjectAndGuid> GetProjects()
+		public IEnumerable<CsProject> GetProjects()
 		{
-			var projects = new List<ProjectAndGuid>();
+			var projects = new List<CsProject>();
 
 			string solutionContents = File.ReadAllText(m_Path);
 
@@ -30,10 +30,7 @@ namespace Unity.Karl.Editor
 					{
 						var separator = line.IndexOf("=");
 						var project = line.Substring(separator, line.Length - separator);
-						projects.Add(new ProjectAndGuid()
-						{
-							path = project
-						});
+					    projects.Add(new CsProject(project));
 					}
 				}
 			}
@@ -41,7 +38,7 @@ namespace Unity.Karl.Editor
 			return projects;
 		}
 
-		public void AddProjectReferences(IEnumerable<ProjectAndGuid> projects)
+		public void AddProjectReferences(IEnumerable<CsProject> projects)
 		{
 			var slnText = File.ReadAllText(m_Path);
 			var add = projects.Where(x => !slnText.Contains(x.guid));
@@ -65,9 +62,12 @@ namespace Unity.Karl.Editor
 				{
 					foreach (var prj in add)
 					{
+					    UnityEngine.Debug.Log("adding: " + prj);
+
 						var proj = prj.path;
 						var name = Path.GetFileNameWithoutExtension(proj);
 						var guid = prj.guid;
+					    UnityEngine.Debug.Log("project = " + proj + "\nname " + name + "\nguid: " + guid);
 
 						sb.AppendLine(string.Format("Project(\"{{{0}}}\") = \"{1}\", \"{2}\", \"{{{3}}}\"", slnGuid, name, proj, guid));
 						sb.AppendLine("EndProject");

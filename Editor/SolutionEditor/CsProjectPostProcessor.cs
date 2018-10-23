@@ -27,7 +27,7 @@ namespace Unity.Karl.Editor
 			foreach (var projectPath in Directory.GetFiles(Directory.GetCurrentDirectory(), "*.csproj"))
 			{
 				var prj = new CsProject(projectPath);
-				
+
 				if(instance.additionalProjectReferencesOverridesDlls)
 				{
 					prj.AddProjectReferences(instance.additionalProjectReferences);

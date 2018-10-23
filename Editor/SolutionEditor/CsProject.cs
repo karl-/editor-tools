@@ -4,17 +4,40 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using UnityEngine;
 
 namespace Unity.Karl.Editor
 {
+    [Serializable]
 	class CsProject
 	{
+	    [SerializeField]
 		string m_Path;
+
+	    string m_Guid;
 
 		public CsProject(string path)
 		{
+		    if(!File.Exists(path))
+		        throw new ArgumentException("path is not a valid cs project");
+
 			m_Path = path;
 		}
+
+	    public string path
+	    {
+	        get { return m_Path; }
+	    }
+
+	    public string guid
+	    {
+	        get
+	        {
+	            if (string.IsNullOrEmpty(m_Guid))
+	                m_Guid = FindGuid();
+	            return m_Guid;
+	        }
+	    }
 
 		public void RemoveReferences(IEnumerable<string> patterns)
 		{
@@ -49,19 +72,7 @@ namespace Unity.Karl.Editor
 			sr.Dispose();
 		}
 
-		public void AddFileReferences(IEnumerable<string> files)
-		{
-			var sb = new StringBuilder();
-
-			sb.AppendLine("  <ItemGroup>");
-
-			foreach (var file in files)
-				sb.AppendLine("<None Include=\" + file + \" />");
-
-			sb.AppendLine("  </ItemGroup>");
-		}
-
-		public void AddProjectReferences(IEnumerable<ProjectAndGuid> projects)
+		public void AddProjectReferences(IEnumerable<CsProject> projects)
 		{
 			var sb = new StringBuilder();
 
@@ -102,7 +113,7 @@ namespace Unity.Karl.Editor
 			File.WriteAllText(m_Path, sb.ToString());
 			sr.Dispose();
 		}
-		
+
 		static void ReadToLine(StringReader sr, string match)
 		{
 			while (sr.Peek() > -1)
@@ -113,5 +124,25 @@ namespace Unity.Karl.Editor
 					return;
 			}
 		}
+
+	    string FindGuid()
+	    {
+	        string csproj = File.ReadAllText(m_Path);
+
+	        using (var sr = new StringReader(csproj))
+	        {
+	            while (sr.Peek() > -1)
+	            {
+	                var line = sr.ReadLine().Trim();
+
+	                if (line.StartsWith("<ProjectGuid>"))
+	                {
+	                    return line.Replace("<ProjectGuid>{", "").Replace("}</ProjectGuid>", "");
+	                }
+	            }
+	        }
+
+	        return "";
+	    }
 	}
 }

@@ -12,42 +12,16 @@ using UEditor = UnityEditor.Editor;
 
 namespace Unity.Karl.Editor
 {
-	[Serializable]
-	class ProjectAndGuid
-	{
-		[SerializeField]
-		string m_Path;
-
-		[SerializeField]
-		string m_Guid;
-
-		public string path
-		{
-			get { return m_Path; }
-			set { m_Path = value; }
-		}
-
-		public string guid
-		{
-			get
-			{
-				if (string.IsNullOrEmpty(m_Guid))
-					m_Guid = Guid.NewGuid().ToString().ToUpper();
-				return m_Guid;
-			}
-		}
-	}
-
 	sealed class CsProjectSettings : ScriptableObject
 	{
 		const string k_SettingsPath = "ProjectSettings/CSharpSolutionSettings.json";
 		static CsProjectSettings s_Instance;
 
 		[SerializeField]
-		ProjectAndGuid[] m_AdditionalProjectReferences = new ProjectAndGuid[]
+		CsProject[] m_AdditionalProjectReferences = new CsProject[]
 		{
-			new ProjectAndGuid() { path = "C:/Users/karlh/unity/unity/Projects/CSharp/UnityEngine.csproj" },
-			new ProjectAndGuid() { path = "C:/Users/karlh/unity/unity/Projects/CSharp/UnityEditor.csproj" }
+			new CsProject("C:/Users/karlh/unity/unity/Projects/CSharp/UnityEngine.csproj"),
+			new CsProject("C:/Users/karlh/unity/unity/Projects/CSharp/UnityEditor.csproj")
 		};
 
 		[SerializeField]
@@ -68,9 +42,9 @@ namespace Unity.Karl.Editor
 		[SerializeField]
 		string[] m_ProjectFilters;
 
-		public IEnumerable<ProjectAndGuid> additionalProjectReferences
+		public IEnumerable<CsProject> additionalProjectReferences
 		{
-			get { return new ReadOnlyCollection<ProjectAndGuid>(m_AdditionalProjectReferences); }
+			get { return new ReadOnlyCollection<CsProject>(m_AdditionalProjectReferences); }
 			set { m_AdditionalProjectReferences = value.ToArray(); }
 		}
 
